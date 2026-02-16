@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ตรวจหวย - วิเคราะห์เลขเด็ด</title>
+  <link rel="stylesheet" href="popup.css">
+  <script src="chart.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-top">
+        <h1>🎰 ตรวจหวย</h1>
+        <div class="header-right">
+          <span class="live-badge hidden" id="liveBadge">🔴 LIVE</span>
+          <a class="beer-btn" href="https://buymeacoffee.com/_orm" target="_blank" title="Buy me a beer 🍺">🍺 Buy me a beer</a>
+          <button class="refresh-btn" id="refreshBtn" title="รีเฟรชข้อมูล">🔄</button>
+          <span class="version">v1.3</span>
+        </div>
+      </div>
+      <div class="status-bar" id="statusBar">กำลังโหลด...</div>
+      <nav class="tabs">
+        <button class="tab active" data-tab="results">📋 ผลล่าสุด</button>
+        <button class="tab" data-tab="search">🔍 ค้นหา</button>
+        <button class="tab" data-tab="history">📅 ย้อนหลัง</button>
+        <button class="tab" data-tab="stats">📊 สถิติ</button>
+        <button class="tab" data-tab="predict">🎯 ทำนาย</button>
+      </nav>
+    </header>
+
+    <!-- Tab: Latest Results -->
+    <section id="tab-results" class="tab-content active">
+      <div class="result-header">
+        <h2>ผลสลากกินแบ่งรัฐบาล</h2>
+        <div class="draw-date" id="latestDrawDate">กำลังโหลด...</div>
+      </div>
+      
+      <div class="prize-section">
+        <div class="prize-card prize-first">
+          <div class="prize-label">รางวัลที่ 1</div>
+          <div class="prize-number" id="firstPrize">------</div>
+          <div class="prize-amount">6,000,000 บาท</div>
+        </div>
+        
+        <div class="prize-row">
+          <div class="prize-card prize-small">
+            <div class="prize-label">เลขหน้า 3 ตัว</div>
+            <div class="prize-numbers" id="front3">---</div>
+          </div>
+          <div class="prize-card prize-small">
+            <div class="prize-label">เลขท้าย 3 ตัว</div>
+            <div class="prize-numbers" id="back3">---</div>
+          </div>
+        </div>
+
+        <div class="prize-card prize-small">
+          <div class="prize-label">เลขท้าย 2 ตัว</div>
+          <div class="prize-number" id="last2">--</div>
+        </div>
+      </div>
+
+      <div class="prize-section">
+        <h3>รางวัลข้างเคียงรางวัลที่ 1</h3>
+        <div class="prize-numbers-list" id="nearFirst">--</div>
+      </div>
+
+      <div class="full-results-toggle">
+        <button class="btn btn-secondary" id="toggleFullResults">แสดงผลรางวัลทั้งหมด ▼</button>
+      </div>
+      
+      <div id="fullResults" class="full-results hidden">
+        <div class="prize-section">
+          <h3>รางวัลที่ 2 (รางวัลละ 200,000 บาท)</h3>
+          <div class="prize-numbers-grid" id="prize2">--</div>
+        </div>
+        <div class="prize-section">
+          <h3>รางวัลที่ 3 (รางวัลละ 80,000 บาท)</h3>
+          <div class="prize-numbers-grid" id="prize3">--</div>
+        </div>
+        <div class="prize-section">
+          <h3>รางวัลที่ 4 (รางวัลละ 40,000 บาท)</h3>
+          <div class="prize-numbers-grid" id="prize4">--</div>
+        </div>
+        <div class="prize-section">
+          <h3>รางวัลที่ 5 (รางวัลละ 20,000 บาท)</h3>
+          <div class="prize-numbers-grid" id="prize5">--</div>
+        </div>
+      </div>
+
+      <div class="sorted-section">
+        <h3>เรียงเบอร์รางวัลที่ 1-5</h3>
+        <div class="sort-controls">
+          <button class="btn btn-sm active" id="sortAsc">น้อย → มาก</button>
+          <button class="btn btn-sm" id="sortDesc">มาก → น้อย</button>
+        </div>
+        <div class="sorted-numbers" id="sortedNumbers">--</div>
+      </div>
+    </section>
+
+    <!-- Tab: Search -->
+    <section id="tab-search" class="tab-content">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="ใส่เลข 2-6 หลัก เช่น 123456" maxlength="6" pattern="[0-9]*">
+        <button class="btn btn-primary" id="searchBtn">ค้นหา</button>
+      </div>
+      <div class="search-options">
+        <label><input type="checkbox" id="searchExact" checked> ตรงทั้งหมด</label>
+        <label><input type="checkbox" id="searchFront3"> หน้า 3 ตัว</label>
+        <label><input type="checkbox" id="searchBack3"> หลัง 3 ตัว</label>
+        <label><input type="checkbox" id="searchLast2"> ท้าย 2 ตัว</label>
+      </div>
+      <div class="search-results" id="searchResults">
+        <p class="placeholder-text">ใส่ตัวเลขเพื่อค้นหาในผลรางวัลย้อนหลัง</p>
+      </div>
+    </section>
+
+    <!-- Tab: History -->
+    <section id="tab-history" class="tab-content">
+      <div class="history-controls">
+        <select id="historyYear" class="select-input">
+          <!-- Populated by JS -->
+        </select>
+        <select id="historyMonth" class="select-input">
+          <option value="">ทุกเดือน</option>
+          <option value="01">มกราคม</option>
+          <option value="02">กุมภาพันธ์</option>
+          <option value="03">มีนาคม</option>
+          <option value="04">เมษายน</option>
+          <option value="05">พฤษภาคม</option>
+          <option value="06">มิถุนายน</option>
+          <option value="07">กรกฎาคม</option>
+          <option value="08">สิงหาคม</option>
+          <option value="09">กันยายน</option>
+          <option value="10">ตุลาคม</option>
+          <option value="11">พฤศจิกายน</option>
+          <option value="12">ธันวาคม</option>
+        </select>
+      </div>
+      <div class="history-list" id="historyList">
+        <p class="placeholder-text">เลือกปีเพื่อดูผลย้อนหลัง</p>
+      </div>
+    </section>
+
+    <!-- Tab: Stats -->
+    <section id="tab-stats" class="tab-content">
+      <div class="stats-controls">
+        <div class="stats-type">
+          <button class="btn btn-sm active" data-chart="frequency">ความถี่ตัวเลข</button>
+          <button class="btn btn-sm" data-chart="hot-cold">เลขร้อน/เลขเย็น</button>
+          <button class="btn btn-sm" data-chart="trend">แนวโน้ม</button>
+          <button class="btn btn-sm" data-chart="pairs">คู่เลข</button>
+        </div>
+        <div class="stats-range">
+          <select id="statsRange" class="select-input">
+            <option value="12">12 งวดล่าสุด</option>
+            <option value="24" selected>24 งวดล่าสุด</option>
+            <option value="48">48 งวดล่าสุด</option>
+            <option value="96">96 งวดล่าสุด</option>
+            <option value="all">ทั้งหมด</option>
+          </select>
+          <select id="statsDigit" class="select-input">
+            <option value="last2">เลขท้าย 2 ตัว</option>
+            <option value="first" selected>รางวัลที่ 1</option>
+            <option value="front3">หน้า 3 ตัว</option>
+            <option value="back3">หลัง 3 ตัว</option>
+          </select>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="statsChart"></canvas>
+      </div>
+      <div class="stats-summary" id="statsSummary"></div>
+    </section>
+
+    <!-- Tab: Predict -->
+    <section id="tab-predict" class="tab-content">
+      <div class="predict-header">
+        <h2>🔮 วิเคราะห์เลขเด็ด</h2>
+        <p class="disclaimer">* เป็นการวิเคราะห์ทางสถิติเท่านั้น ไม่รับประกันผล</p>
+      </div>
+
+      <div class="predict-data-options">
+        <label class="deep-check"><input type="checkbox" id="predictDeep"> ใช้ข้อมูลทั้งหมด (ย้อนหลังทุกปี แม่นยำกว่า)</label>
+        <button class="btn btn-sm btn-outline" id="deepLoadBtn">📥 โหลดข้อมูลย้อนหลังทั้งหมด</button>
+      </div>
+
+      <div id="predictDataRange" class="predict-data-range">📋 อ้างอิงข้อมูล: กำลังตรวจสอบ...</div>
+
+      <div class="predict-methods">
+        <div class="method-card">
+          <h3>📈 วิเคราะห์ความถี่ (Frequency Analysis)</h3>
+          <p>วิเคราะห์จากตัวเลขที่ออกบ่อย</p>
+          <div class="method-result" id="freqResult">--</div>
+        </div>
+
+        <div class="method-card">
+          <h3>🔥 เลขร้อน-เลขเย็น (Hot-Cold)</h3>
+          <p>เลขที่ออกถี่ในช่วงหลัง vs เลขที่ไม่ออกนาน</p>
+          <div class="method-result" id="hotColdResult">--</div>
+        </div>
+
+        <div class="method-card">
+          <h3>📐 วิเคราะห์ช่วงห่าง (Gap Analysis)</h3>
+          <p>วิเคราะห์จากช่วงห่างระหว่างที่ออก</p>
+          <div class="method-result" id="gapResult">--</div>
+        </div>
+
+        <div class="method-card">
+          <h3>🔢 วิเคราะห์คู่เลข (Pair Analysis)</h3>
+          <p>คู่ตัวเลขที่มักออกด้วยกัน</p>
+          <div class="method-result" id="pairResult">--</div>
+        </div>
+
+        <div class="method-card">
+          <h3>🌀 วิเคราะห์รูปแบบ (Pattern Analysis)</h3>
+          <p>รูปแบบคู่-คี่, สูง-ต่ำ ที่มักออก</p>
+          <div class="method-result" id="patternResult">--</div>
+        </div>
+
+        <div class="method-card">
+          <h3>📊 Moving Average</h3>
+          <p>ค่าเฉลี่ยเคลื่อนที่ของตัวเลข</p>
+          <div class="method-result" id="maResult">--</div>
+        </div>
+
+        <div class="method-card">
+          <h3>🎲 วิเคราะห์ผสมทุกวิธี (Combined)</h3>
+          <p>รวมผลจากทุกวิธีคำนวณ พร้อมคะแนนความมั่นใจ</p>
+          <div class="method-result combined" id="combinedResult">--</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-large" id="runPredict">🔮 วิเคราะห์เลขเด็ดงวดถัดไป</button>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>ข้อมูลจากสำนักงานสลากกินแบ่งรัฐบาล | เพื่อความบันเทิงเท่านั้น</p>
+    </footer>
+  </div>
+
+  <script src="lotteryStaticData.js"></script>
+  <script src="lotteryData.js"></script>
+  <script src="lotteryAnalysis.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
