@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Thai Lottery - ตรวจหวย วิเคราะห์เลขเด็ด",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "ตรวจผลสลากกินแบ่งรัฐบาล ดูผลย้อนหลัง วิเคราะห์สถิติ กราฟ และคำนวณเลขเด็ด",
   "permissions": ["storage", "alarms"],
   "host_permissions": [
