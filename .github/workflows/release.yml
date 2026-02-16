@@ -1,0 +1,74 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build release zip
+        run: |
+          zip -r thai-lottery-v${{ steps.version.outputs.VERSION }}.zip \
+            manifest.json \
+            popup.html \
+            popup.css \
+            popup.js \
+            lotteryData.js \
+            lotteryAnalysis.js \
+            lotteryStaticData.js \
+            chart.min.js \
+            background.js \
+            icons/ \
+            -x "*.DS_Store" \
+            -x "*__MACOSX*"
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            CHANGES=$(git log "$PREV_TAG"..HEAD --pretty=format:"- %s" --no-merges | grep -v "^- release:")
+          else
+            CHANGES=$(git log --pretty=format:"- %s" --no-merges | grep -v "^- release:")
+          fi
+          
+          cat << EOF > release-notes.md
+          ## Thai Lottery v${{ steps.version.outputs.VERSION }}
+
+          ### Changes
+          $CHANGES
+
+          ### Installation
+          1. Download \`thai-lottery-v${{ steps.version.outputs.VERSION }}.zip\` below
+          2. Extract the zip file
+          3. Open \`chrome://extensions/\` in Chrome
+          4. Enable **Developer mode**
+          5. Click **Load unpacked** and select the extracted folder
+
+          ---
+          _Built from commit $(git rev-parse --short HEAD)_
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Thai Lottery v${{ steps.version.outputs.VERSION }}
+          body_path: release-notes.md
+          files: thai-lottery-v${{ steps.version.outputs.VERSION }}.zip
+          draft: false
+          prerelease: false
